@@ -1,0 +1,52 @@
+{
+  "name": "sat-changelog-be",
+  "version": "1.0.0",
+  "description": "SER005-Changelog — centralized changelog, evolution request, and roadmap backend",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:json": "mkdir -p test-results && jest --forceExit --detectOpenHandles --json --outputFile=test-results/jest-results.json",
+    "report:auto-issues": "node ./tools/automated-issue-reporting/run.js",
+    "seed:data": "node src/scripts/seed_data.js",
+    "seed:translations": "node src/scripts/seed_translations.js",
+    "seed:translations:reset": "node src/scripts/seed_translations.js --reset"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.11.0",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+    "apollo-server-errors": "^3.3.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "graphql": "^16.9.0",
+    "graphql-depth-limit": "^1.1.0",
+    "graphql-tag": "^2.12.6",
+    "helmet": "^7.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.0",
+    "morgan": "^1.10.0",
+    "uuid": "^10.0.0",
+    "@graphql-tools/merge": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/?(*.)+(spec|test).js"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
