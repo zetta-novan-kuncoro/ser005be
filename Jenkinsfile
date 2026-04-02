@@ -31,9 +31,9 @@ pipeline {
   }
 
   environment {
-    // ── Repo URLs ──────────────────────────────────────────────────────────
-    BE_REPO_URL = 'https://github.com/zetta-novan-kuncoro/ser005be'
-    FE_REPO_URL = 'https://github.com/zetta-novan-kuncoro/ser005fe'
+    // ── Repo URLs (SSH) ────────────────────────────────────────────────────
+    BE_REPO_URL = 'git@github.com:zetta-novan-kuncoro/ser005be.git'
+    FE_REPO_URL = 'git@github.com:zetta-novan-kuncoro/ser005fe.git'
 
     // ── YouTrack credentials (Jenkins credentials store) ───────────────────
     YOUTRACK_BASE_URL   = credentials('sat-changelog-youtrack-base-url')
@@ -69,15 +69,18 @@ pipeline {
   stages {
 
     // ── Stage 1: Clone BE repo ─────────────────────────────────────────────
+    // sshagent loads the stored SSH key so git clone can authenticate.
     // Try the pushed branch; fall back to main if it doesn't exist in be/.
     stage('Checkout BE') {
       steps {
-        sh '''
-          git clone "$BE_REPO_URL" be
-          cd be
-          git checkout "$BRANCH_TO_BUILD" 2>/dev/null || git checkout main
-          echo "[CI] BE branch: $(git rev-parse --abbrev-ref HEAD)"
-        '''
+        sshagent(['github-zetta-ssh']) {
+          sh '''
+            git clone "$BE_REPO_URL" be
+            cd be
+            git checkout "$BRANCH_TO_BUILD" 2>/dev/null || git checkout main
+            echo "[CI] BE branch: $(git rev-parse --abbrev-ref HEAD)"
+          '''
+        }
       }
     }
 
@@ -85,12 +88,14 @@ pipeline {
     // Same branch strategy as BE.
     stage('Checkout FE') {
       steps {
-        sh '''
-          git clone "$FE_REPO_URL" fe
-          cd fe
-          git checkout "$BRANCH_TO_BUILD" 2>/dev/null || git checkout main
-          echo "[CI] FE branch: $(git rev-parse --abbrev-ref HEAD)"
-        '''
+        sshagent(['github-zetta-ssh']) {
+          sh '''
+            git clone "$FE_REPO_URL" fe
+            cd fe
+            git checkout "$BRANCH_TO_BUILD" 2>/dev/null || git checkout main
+            echo "[CI] FE branch: $(git rev-parse --abbrev-ref HEAD)"
+          '''
+        }
       }
     }
 
