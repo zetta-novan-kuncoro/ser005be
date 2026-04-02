@@ -1,0 +1,83 @@
+/**
+ * sat-changelog BE pipeline
+ *
+ * Runs inside the ser005be Multibranch Pipeline job.
+ * Workspace root = BE repo checkout.
+ *
+ * Stages:
+ *   1. Install dependencies
+ *   2. Unit tests  (jest → test-results/jest-results.json)
+ *
+ * post.always:
+ *   - Automated YouTrack issue reporter
+ *   - Archive jest-results.json
+ */
+pipeline {
+
+  agent any
+
+  tools {
+    nodejs 'node-20'   // Must match name in Global Tool Configuration → NodeJS
+  }
+
+  options {
+    timeout(time: 20, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+    disableConcurrentBuilds()
+  }
+
+  environment {
+    // ── YouTrack ─────────────────────────────────────────────────────────────
+    YOUTRACK_BASE_URL   = credentials('sat-changelog-youtrack-base-url')
+    YOUTRACK_API_TOKEN  = credentials('sat-changelog-youtrack-api-token')
+    YOUTRACK_PROJECT_ID = credentials('sat-changelog-youtrack-project-id')
+
+    // ── Backend runtime (needed by the automated issue reporter) ─────────────
+    MONGO_URI      = credentials('sat-changelog-mongo-uri')
+    JWT_SECRET     = credentials('sat-changelog-jwt-secret')
+    ENCRYPTION_KEY = credentials('sat-changelog-encryption-key')
+
+    // ── Issue reporter ───────────────────────────────────────────────────────
+    AUTOMATED_ISSUE_WRITE_BRANCHES  = "${env.BRANCH_NAME}"
+    AUTOMATED_ISSUE_CI_BRANCH       = "${env.BRANCH_NAME}"
+    AUTOMATED_ISSUE_CI_COMMIT       = "${env.GIT_COMMIT}"
+    AUTOMATED_ISSUE_CI_RUN_URL      = "${env.BUILD_URL}"
+    AUTOMATED_ISSUE_BE_RESULTS_FILE = 'test-results/jest-results.json'
+  }
+
+  stages {
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+
+    stage('Unit Tests') {
+      steps {
+        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+          sh 'npm run test:json'
+        }
+      }
+    }
+
+  }
+
+  post {
+    always {
+
+      // 1. Run automated issue reporter
+      catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+        sh 'npm run report:auto-issues'
+      }
+
+      // 2. Archive test results
+      archiveArtifacts(
+        artifacts: 'test-results/jest-results.json',
+        allowEmptyArchive: true
+      )
+
+    }
+  }
+
+}
